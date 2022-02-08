@@ -269,9 +269,9 @@ while 1==1
         coeff_list(1)=3; coeff_list(2)=2; coeff_list(3)=1;
         params.coeff = coeff_list(k_AL - 1);
         umax_list = 34*ones(1,20); 
-        umax_list(1)= 100; umax_list(2)=50; umax_list(3)=40;
+%         umax_list(1)= 100; umax_list(2)=50; umax_list(3)=40;
         params.umax=umax_list(k_AL - 1);
-        params.epsU = 500;
+        params.epsU = 100;
 
         
     else

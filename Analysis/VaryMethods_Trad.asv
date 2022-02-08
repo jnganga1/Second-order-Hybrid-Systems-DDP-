@@ -7,12 +7,26 @@ OtherTests.randomInit = false;
 iLQR = 1; Method = 'none';
 iLQR_store  = DDP_2DQuadruped(iLQR,Method,0,Itgr,OtherTests);
 1==1;
+simulation_Jump(iLQR_store.xbar{5}(1:7,:),...
+    iLQR_store.ybar{5},iLQR_store.rbtparams,iLQR_store.params,false);
 
+%%
 %using DDP, regularization: Trad, Method: ExtMod 
 iLQR = 0; Method = 2; Reg = 1;
 DDP_ExtMod_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
 
-%
+simulation_Jump(DDP_ExtMod_store.xbar{5}(1:7,:),...
+    DDP_ExtMod_store.ybar{5},DDP_ExtMod_store.rbtparams,...
+    DDP_ExtMod_store.params,false);
+
+Stuff = {iLQR_store,DDP_ExtMod_store};
+colors = {'r','b','k','c'};
+names = {'iLQR', 'E-ModRNEA DDP','Explicit DDP','Tensor DDP'};
+
+%%
+
+
+%%%
 %using DDP, regularization: Trad, Method: Explicit 
 iLQR = 0; Method = 1; Reg = 1;
 DDP_Exp_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
@@ -135,7 +149,7 @@ ylabel('Force (Nm)','Interpreter','latex');
 %% Plot Ybar - Friction cone wise
 
 dt = 0.001;
-ybar =  Stuff{2}.ybar{5};
+ybar =  Stuff{1}.ybar{5};
 len = length(ybar);
 tspan = dt*(0:len-1);
 
@@ -189,9 +203,8 @@ ylabel(['u',num2str(idx),' (N)'],'Interpreter','latex');
 end
 bb=legend([h{:}],'Location','best'); 
 bb.Box='off'
-
-fprintf('Max U: %.2f\n', max(max(Stuff{2}.ubar{5})));
-fprintf('Max U: %.2f\n', min(min(Stuff{2}.ubar{5})));
+fprintf('Max U: %.2f\n', max(max(Stuff{i}.ubar{5})));
+fprintf('Max U: %.2f\n', min(min(Stuff{i}.ubar{5})));
 %%
 hold all
 x = [1 1]*maxItr; 

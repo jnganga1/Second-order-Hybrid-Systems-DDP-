@@ -13,16 +13,16 @@ for i = 1:num_mode
     switch seq(i)
         case "bs"
             P(i) = 1;
-            T_mode(i) = 0.080;
+            T_mode(i) = 0.0720;
         case "f1"
             P(i) = 2;
-            T_mode(i) = 0.070;
+            T_mode(i) = 0.050;
         case "fs"
             P(i) = 3;
             T_mode(i) = 0.072;
         case "f2"
             P(i) = 4;
-            T_mode(i) = 0.070;
+            T_mode(i) = 0.050;
     end
     len_mode(i) = T_mode(i)/dt;
 end
