@@ -6,6 +6,7 @@ function [Storage] = DDP_2DQuadruped(iLQR,Method,regularizationMethod,Itgr,Other
 % Method == 1 refers Explicit Deriv Calculation, 2 is Extended Modified RNEA, 3 is Tensor
 % regularizationMethod: Applies to DDP alone 
 % regularizationMethod == 1 refers to traditional regularization, i.e., repeats backward pass
+% regularizationMethod == 4 refers to traditional regularization for H=[Qxx Qux';Qux Quu]
 % regularizationMethod == 2 refers to point-by-point regularization 
 % regularizationMethod == 3 refers to pullback of second-order terms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -121,10 +122,10 @@ if OtherTests.Run == true
     %Vary control with noise 
     if OtherTests.varyU 
         data= load('Trad_Methods_compare.mat');
-        xbar = data.DDP_Exp_store.xbar{5}; 
-        ubar = data.DDP_Exp_store.ubar{5}; 
-        robot_params = data.DDP_Exp_store.rbtparams; 
-        params = data.DDP_Exp_store.params;
+        xbar = data.iLQR_store.xbar{5}; 
+        ubar = data.iLQR_store.ubar{5}; 
+        robot_params = data.iLQR_store.rbtparams; 
+        params = data.iLQR_store.params;
         params.Debug = 0;
         params.DeltaV = 1e-9;
         
@@ -133,26 +134,64 @@ if OtherTests.Run == true
         params.Method = OtherTests.Method;
         
         noise = OtherTests.noise;
-%         figure; 
+        StateNoise = OtherTests.StateNoise;
+        
+        dt = params.dt;
+        t = 0:dt:(length(ubar)-1)*dt;
+        figure; 
+        g={};
         for i = 1:4
-%             subplot(2,2,i); hold on;
-%             plot(ubar(i,:)); 
+            subplot(2,2,i); hold on;
+            g{1}=plot(t,ubar(i,:),'LineWidth',2,'DisplayName','u'); 
         end
         ubar = ubar + noise;
         for i = 1:4
-%             subplot(2,2,i); hold on;
-%             plot(ubar(i,:)); 
+            subplot(2,2,i); hold on;
+            g{2}=plot(t,ubar(i,:),'LineWidth',2,'DisplayName','u + noise'); 
+            grid on; grid minor;
+            h = get(gca,'Children');
+            set(gca,'Children',[flipud(h)]); 
+            ylabel(['u ',num2str(i)]);
+            xlabel('Time','Interpreter','latex');
         end
-        1==1;
-        
-        
+        legend([g{:}]);
+        sgtitle(['Multiplicative = ' num2str(OtherTests.scalarNse)],'Interpreter','latex')
+        savefig('Analysis/ControlNoise.fig');
+        %Plot States
+        figure; K = {};
+        for i = 2:7
+            subplot(2,3,i-1); hold on;
+            K{1}=plot(t,xbar(i,:),'LineWidth',2,'DisplayName','x'); 
+            grid on; grid minor;
+            ylabel(['x',num2str(i)],'Interpreter','latex');
+            xlabel('Time','Interpreter','latex');
+        end
+        xbar = xbar + StateNoise; 
+        for i = 2:7
+            subplot(2,3,i-1); hold on;
+            K{2}=plot(t,xbar(i,:),'LineWidth',2,'DisplayName','x+Noise'); 
+            grid on; grid minor;
+            h = get(gca,'Children');
+            ylabel(['x',num2str(i)],'Interpreter','latex');
+            xlabel('Time','Interpreter','latex');
+            set(gca,'Children',[flipud(h)]);            
+        end
+        legend([K{:}]);
+        sgtitle(['Multiplicative = ' num2str(OtherTests.StateScalar)],'Interpreter','latex')
+        savefig('Analysis/StateNoise.fig');
+        params.filename = 'Analysis/StateNoise.gif';
+        simulation(xbar(1:params.q_size,:),robot_params,params,false);
+
+        1==1; close all;
+
     else 
+        %VaryV Initial Condition
         data= load('Trad_Methods_compare.mat');
         xbar = data.iLQR_store.xbar{5}; 
         ubar = data.iLQR_store.ubar{5}; 
         robot_params = data.iLQR_store.rbtparams; 
         params = data.iLQR_store.params;
-        params.Debug = 0;
+        params.Debug = 1;
         
         params.iLQR = OtherTests.iLQR; 
         params.regularizationMethod = OtherTests.RegMethod;
@@ -161,6 +200,7 @@ if OtherTests.Run == true
         xbar(8,1) = OtherTests.vd;
     end    
     
+    Storage.OrigOptim = data; 
     [V0, ~, ~, ~, h0,~] = forward_pass(xbar, ubar, du, K, 1, robot_params, params,DynFns);
     start = tic;  
     [Vbar, xbar, ybar, ubar, h, hstore, Vxx,params,Vbar_no_mu] = DDP(xbar, ubar, robot_params, params,DynFns,maxItr);

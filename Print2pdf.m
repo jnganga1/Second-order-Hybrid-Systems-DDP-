@@ -2,7 +2,7 @@
 %%
 %% I print to working directory
 %%
-str = 'EndCost_VaryU';
+str = 'SupLinearConv';
 filename = ['Results/',str];
 %
 L = gcf; 

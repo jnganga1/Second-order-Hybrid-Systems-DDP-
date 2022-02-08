@@ -54,7 +54,7 @@ while 1 == 1
             return 
         end
         regularization = regularization / 20;
-        if regularization < 1e-6
+        if regularization < 1e-4
             regularization = 0;
         end
     end
