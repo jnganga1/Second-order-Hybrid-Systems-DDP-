@@ -1,6 +1,8 @@
+
 function [V, x, y, u, h,V_no_mu] = forward_iteration(xbar, ubar, Vprev, du, K, dV, robot_params, params,DynFns)
     V = 0;
     eps = 0.05;
+%     eps = 1;
     
     x = 0*xbar;
     u = 0*ubar;

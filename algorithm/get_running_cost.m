@@ -19,22 +19,21 @@ if nargout > 1
     lux = squeeze(lux_mat(:,:,ind));
     lyy = squeeze(lyy_mat(:,:,ind));
     
-    %Control cost
-    maxu = 50; 
-    z1 = -u + maxu; z2 = u + maxu; 
-    [l,lu,luu] = addcostVariable(l,lu,luu,z1,z2,delta,u,epsU);
-%     [l,lu,luu] = addcost(l,lu,luu,delta,u); 
 
-    %minmax force normal cost 
-    z1 =  - y(2); z2 = y(2); 
-    [l,ly,lyy] = addcostVariable(l,ly,lyy,z1,z2,delta,y(2),eps);
-    %friction cone constraint cost 
-    z1 = -y(1) + coeff* y(2); z2 =  y(1) + coeff* y(2); 
-    [l,ly,lyy] = addcostVariable(l,ly,lyy,z1,z2,delta,y,eps);
-%     %
 
-    
-
+%Control cost
+% maxu = 50; 
+% z1 = -u + maxu; z2 = u + maxu; 
+% [l,lu,luu] = addcostVariable(l,lu,luu,z1,z2,delta,u,epsU);
+% %     [l,lu,luu] = addcost(l,lu,luu,delta,u); 
+% 
+% %minmax force normal cost 
+% z1 =  - y(2); z2 = y(2); 
+% [l,ly,lyy] = addcostVariable(l,ly,lyy,z1,z2,delta,y(2),eps);
+% %friction cone constraint cost 
+% z1 = -y(1) + coeff* y(2); z2 =  y(1) + coeff* y(2); 
+% [l,ly,lyy] = addcostVariable(l,ly,lyy,z1,z2,delta,y,eps);
+% %     %
 end
 end
 

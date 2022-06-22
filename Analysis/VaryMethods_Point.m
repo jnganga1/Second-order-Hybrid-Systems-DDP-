@@ -2,17 +2,17 @@
 Itgr = 1; %DON'T CHANGE ME 
 OtherTests.Run = false; 
 OtherTests.randomInit = false;
-%
+
 %Using iLQR method - no regularization
-iLQR = 1; Method = 'none';
-iLQR_store  = DDP_2DQuadruped(iLQR,Method,0,Itgr,OtherTests);
+iLQR = 1; Method = 'none';Reg = 2;
+iLQR_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
 %
 %
 Reg = 2;
 %using DDP, regularization: Point, Method: ExtMod 
 iLQR = 0; Method = 2; 
 DDP_ExtMod_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
-%
+
 %using DDP, regularization: Point, Method: Explicit 
 iLQR = 0; Method = 1;
 DDP_Exp_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
@@ -26,7 +26,7 @@ save('MatData/Point_Methods_compare.mat');
 
 %%
 close all; clear; clc; 
-load('MatData/Point_Methods_compare.mat');
+load('crcMatData/Point_Methods_compare.mat');
 
 %Making defaults makes life easier 
 set(groot,'defaultLineLineWidth',4)
@@ -101,7 +101,7 @@ for i =1:length(Stuff)
     fname = ['Results/',names{i},'iLQR','_Point','.gif'];
     Stuff{i}.params.filename = fname;
     simulation_Jump(Stuff{i}.xbar{5},...
-        Stuff{i}.ybar{5},Stuff{i}.rbtparams,Stuff{i}.params,true)
+        Stuff{i}.ybar{5},Stuff{i}.rbtparams,Stuff{i}.params,false)
 %     norm(Stuff{i}.ybar{idx}(:))
 end
 
@@ -135,10 +135,10 @@ ylabel('Force (Nm)','Interpreter','latex');
 %% Plot Ybar - Friction cone wise
 
 dt = 0.001;
-len = 585;
+ybar =  Stuff{1}.ybar{5};
+len = length(ybar);
 tspan = dt*(0:len-1);
 
-ybar =  Stuff{2}.ybar{5};
 figure;
 subplot(2,1,1)
 plot(tspan,ybar(1,:,1),'DisplayName','$F_{x}$'); hold on; 

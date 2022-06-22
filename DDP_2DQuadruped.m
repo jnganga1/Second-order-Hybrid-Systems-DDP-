@@ -1,3 +1,4 @@
+
 function [Storage] = DDP_2DQuadruped(iLQR,Method,regularizationMethod,Itgr,OtherTests)
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,7 +42,8 @@ u_sym = MX.sym('u',[NA 1]); %'real'); % actuations
 
 
 % set up dynamics and retrieve robot_params
-[params, robot_params,DynFns] = AllTogether_set_system_functions(x_sym, u_sym, '2D');
+% [~, ~,DynFns] = AllTogether_set_system_functions_ALL(x_sym, u_sym, '2D');
+[params, robot_params,DynFns] = AllTogether_set_system_functions_ALL(x_sym, u_sym, '2D');
 
 
 % state initialization
@@ -50,15 +52,17 @@ vd=0.5;
 % if OtherTests.randomInit == true
 %     vd = vd + OtherTests.rndValue;
 % end
-q0 = [0,-0.1785,-pi/25,0.35*pi,-0.7*pi,0.25*pi,-0.65*pi]';
-q0 = [0,-0.1085,-pi/75,0.35*pi,-0.7*pi,0.35*pi,-0.65*pi]';
+q0 = [0,-0.1485,-pi/25,0.35*pi,-0.7*pi,0.25*pi,-0.65*pi]';
+% q0 = [0,-0.1085,-pi/75,0.35*pi,-0.7*pi,0.35*pi,-0.65*pi]';
 qd0 = [vd,-0.2,0,0,0,0,0]';
 x0 = [q0;qd0];
 u0 = zeros(NA,1);
 
+% PosturePlot(q0, robot_params)
+
 [params, callback_params] = set_sim_params(params);
 params.G = [0 -robot_params.mass_robot*robot_params.g]';  
-params.DeltaV = 1e-3;
+params.DeltaV = 1e-9;
 
 %% Set which method to use and if iLQR
 
@@ -102,7 +106,7 @@ params.umax = 34;
 % params.eps=0; 
 % params.epsU = 0;
 params.eps =4; 
-params.epsU = 500;
+params.epsU = 100;
 
 hbar = zeros(params.num_tdconstr,5);      % initialize violation measure for 20 AL iterations
 norm_hbar = zeros(1,20);
@@ -121,12 +125,29 @@ if OtherTests.Run == true
     
     %Vary control with noise 
     if OtherTests.varyU 
-        data= load('Trad_Methods_compare.mat');
-        xbar = data.iLQR_store.xbar{5}; 
-        ubar = data.iLQR_store.ubar{5}; 
-        robot_params = data.iLQR_store.rbtparams; 
-        params = data.iLQR_store.params;
-        params.Debug = 0;
+%        data= load('crcMatData_New/Trad_Methods_compare_WithReg.mat');
+       if OtherTests.BeforeNoise 
+            data = load('MatData/Trad_Methods_5AL_fixed_ReModded.mat');
+            if OtherTests.iLQR
+                xbar = data.iLQR_store.xbar{1}; 
+                ubar = data.iLQR_store.ubar{1}; 
+                robot_params = data.iLQR_store.rbtparams; 
+                params = data.iLQR_store.params;
+            else
+                xbar = data.DDP_ExtMod_store.xbar{1}; 
+                ubar = data.DDP_ExtMod_store.ubar{1}; 
+                robot_params = data.DDP_ExtMod_store.rbtparams; 
+                params = data.DDP_ExtMod_store.params;
+            end
+       else
+            data = load('MatData/diditwork_again.mat');
+            xbar = data.ExtMod_Nsd_nowOpt.xbar{1}; 
+            ubar = data.ExtMod_Nsd_nowOpt.ubar{1}; 
+            robot_params = data.ExtMod_Nsd_nowOpt.rbtparams; 
+            params = data.ExtMod_Nsd_nowOpt.params;
+        end
+            
+        params.Debug = 1;
         params.DeltaV = 1e-9;
         
         params.iLQR = OtherTests.iLQR; 
@@ -144,7 +165,7 @@ if OtherTests.Run == true
             subplot(2,2,i); hold on;
             g{1}=plot(t,ubar(i,:),'LineWidth',2,'DisplayName','u'); 
         end
-        ubar = ubar + noise;
+        ubar = ubar + noise(:,1:length(ubar));
         for i = 1:4
             subplot(2,2,i); hold on;
             g{2}=plot(t,ubar(i,:),'LineWidth',2,'DisplayName','u + noise'); 
@@ -158,25 +179,27 @@ if OtherTests.Run == true
         sgtitle(['Multiplicative = ' num2str(OtherTests.scalarNse)],'Interpreter','latex')
         savefig('Analysis/ControlNoise.fig');
         %Plot States
-        figure; K = {};
+        figure; G = {};
         for i = 2:7
             subplot(2,3,i-1); hold on;
-            K{1}=plot(t,xbar(i,:),'LineWidth',2,'DisplayName','x'); 
+            G{1}=plot(t,xbar(i,:),'LineWidth',2,'DisplayName','x'); 
             grid on; grid minor;
             ylabel(['x',num2str(i)],'Interpreter','latex');
             xlabel('Time','Interpreter','latex');
         end
-        xbar = xbar + StateNoise; 
+        x0 = xbar(:,1); 
+        xbar = xbar + StateNoise(:,1:length(xbar)); 
+        xbar(:,1) =x0;
         for i = 2:7
             subplot(2,3,i-1); hold on;
-            K{2}=plot(t,xbar(i,:),'LineWidth',2,'DisplayName','x+Noise'); 
+            G{2}=plot(t,xbar(i,:),'LineWidth',2,'DisplayName','x+Noise'); 
             grid on; grid minor;
             h = get(gca,'Children');
             ylabel(['x',num2str(i)],'Interpreter','latex');
             xlabel('Time','Interpreter','latex');
             set(gca,'Children',[flipud(h)]);            
         end
-        legend([K{:}]);
+        legend([G{:}]);
         sgtitle(['Multiplicative = ' num2str(OtherTests.StateScalar)],'Interpreter','latex')
         savefig('Analysis/StateNoise.fig');
         params.filename = 'Analysis/StateNoise.gif';
@@ -186,7 +209,7 @@ if OtherTests.Run == true
 
     else 
         %VaryV Initial Condition
-        data= load('Trad_Methods_compare.mat');
+        data= load('MatData/Trad_Methods_compare.mat');
         xbar = data.iLQR_store.xbar{5}; 
         ubar = data.iLQR_store.ubar{5}; 
         robot_params = data.iLQR_store.rbtparams; 
@@ -213,6 +236,7 @@ if OtherTests.Run == true
     Storage.h{k_AL} = h; 
     Storage.hstore{k_AL} = hstore; 
     Storage.V0 = V0;
+    Storage.OtherTests = OtherTests;
     
     Storage.rbtparams = robot_params; 
     Storage.params = params;  
@@ -253,13 +277,13 @@ while 1==1
     end
     if params.DDP_OK
         norm_hbar(k_AL) = norm(h);
-        if norm(h) < 1e-3 || k_AL > 4
+        if norm(h) < 1e-5 || k_AL > 4
             break; 
         end
         k_AL = k_AL + 1;
         mu1 = params.mu1 + params.mu2*h; % update lagrangian
         params.mu1 = mu1;
-        params.mu2 = min(Beta_AL*params.mu2,1e5); % update penalty
+        params.mu2 = min(Beta_AL*params.mu2,1e8); % update penalty
 
         params.delta = max(params.delta*0.5,1e-7); 
         eps_list = 0.01* ones(1,20); 
@@ -269,9 +293,9 @@ while 1==1
         coeff_list(1)=3; coeff_list(2)=2; coeff_list(3)=1;
         params.coeff = coeff_list(k_AL - 1);
         umax_list = 34*ones(1,20); 
-%         umax_list(1)= 100; umax_list(2)=50; umax_list(3)=40;
+        umax_list(1)= 70; umax_list(2)=40; umax_list(3)=40;
         params.umax=umax_list(k_AL - 1);
-        params.epsU = 100;
+        params.epsU = 600;
 
         
     else

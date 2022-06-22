@@ -2,8 +2,8 @@
 %%
 %% I print to working directory
 %%
-str = 'SupLinearConv';
-filename = ['Results/',str];
+str = 'Reproduced';
+filename = ['ReWorkedFigures/',str];
 %
 L = gcf; 
 set(L,'Units','Inches');
@@ -20,6 +20,6 @@ system(filenamePdf)
 h=gca; 
 h.YAxis.FontSize =15
 h.XAxis.FontSize =15
-h.Legend.FontSize =22
+h.Legend.FontSize =15
 h.YLabel.FontSize=22
 h.XLabel.FontSize=22

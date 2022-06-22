@@ -85,7 +85,7 @@ function [dV, Vx, Vxx, du, K, success,regTooBig] = backward_pass(xbar, ybar, uba
                     yk = zeros(params.y_size,1);
                 end
                 [Qx, Qu, Qxx, Quu, Qux,fgxx,fgux] = QInfo(xk,xk1,yk, uk, Vxk, Vxxk, P(mode_ind),params,DynFns);
-                if params.iLQR == 0
+%                 if params.iLQR == 0
                     % If we are doing full second order DDP, add in regularization  
                     if params.regularizationMethod == 1 
                             Qxx = Qxx + fgxx; 
@@ -121,7 +121,7 @@ function [dV, Vx, Vxx, du, K, success,regTooBig] = backward_pass(xbar, ybar, uba
                     else
                         [Qxx,Qux,Quu] =regularizer_module(Qxx,Qux,Quu,fgxx,fgux,params);                        
                     end
-                end
+%                 end
                 
                 % Standard equations
                 Quu_inv = eye(params.u_size)/Quu;

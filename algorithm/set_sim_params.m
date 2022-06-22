@@ -2,7 +2,7 @@ function [params, callback_params] = set_sim_params(params)
 %% simulation parameters
 dt = .001;  
 seq = ["bs","f2","fs","f2","bs","f1","fs"];%,"f2"]; % Specify mode sequence
-seq = ["f2","bs","f1","fs","f2","bs","f1","fs","f2"]; % Specify mode sequence
+seq = ["f2","bs","f1","fs","f2","bs"];%"f1"];%,"fs"];%"f2","bs"]; % Specify mode sequence
 num_mode = length(seq);     % num of modes in total
 num_mode_gait = 4;          % num of modes in one gait
 
@@ -13,13 +13,13 @@ for i = 1:num_mode
     switch seq(i)
         case "bs"
             P(i) = 1;
-            T_mode(i) = 0.0720;
+            T_mode(i) = 0.072;
         case "f1"
             P(i) = 2;
             T_mode(i) = 0.050;
         case "fs"
             P(i) = 3;
-            T_mode(i) = 0.072;
+            T_mode(i) = 0.0720;
         case "f2"
             P(i) = 4;
             T_mode(i) = 0.050;
@@ -39,8 +39,7 @@ params.num_mode= num_mode;
 params.num_tdconstr = get_num_tdconstr(seq);
 params.len_mode = len_mode;
 
-params.iLQR = 0;
-params.beta = .05;
+params.beta = .5;
 params.gamma = .01;
 params.Debug = 1;
 params.OK = true; % DDP success indicator (regularization and line search)

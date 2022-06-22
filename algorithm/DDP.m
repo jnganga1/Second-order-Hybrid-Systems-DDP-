@@ -22,9 +22,9 @@ regularization = 0; % for full second order DDP
 
 while 1 == 1    
     % Backward Pass 
-    if params.iLQR
-        [dV, Vx, Vxx, du, K] = backward_pass(xbar, ybar, ubar, params,regularization,DynFns);          
-    else % It is full second order DDP, so we must be careful
+%     if params.iLQR
+% %         [dV, Vx, Vxx, du, K] = backward_pass(xbar, ybar, ubar, params,regularization,DynFns);          
+%     else % It is full second order DDP, so we must be careful
         if params.Debug
             fprintf('=======================================\n');
             fprintf('Iteration %3d',iter);
@@ -54,10 +54,10 @@ while 1 == 1
             return 
         end
         regularization = regularization / 20;
-        if regularization < 1e-4
+        if regularization < 1e-6
             regularization = 0;
         end
-    end
+%     end
     
     % Update Plots
 %     DDP_Callback(xbar, ybar, ubar, Vbar, du,K, dV ,robot_params,params, callback_params);

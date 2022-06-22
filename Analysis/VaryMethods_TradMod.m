@@ -4,8 +4,8 @@ OtherTests.Run = false;
 OtherTests.randomInit = false;
 %
 %Using iLQR method - no regularization
-iLQR = 1; Method = 'none';
-iLQR_store  = DDP_2DQuadruped(iLQR,Method,0,Itgr,OtherTests);
+iLQR = 1; Method = 'none'; Reg =4;
+iLQR_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
 %
 Reg = 4; 
 %using DDP, regularization: TradMod, Method: ExtMod 
@@ -25,7 +25,7 @@ save('MatData/TradMod_Methods_compare.mat');
 
 %%
 close all; clear; clc; 
-load('MatData/TradMod_Methods_compare.mat');
+load('crcMatData/TradMod_Methods_compare.mat');
 
 %Making defaults makes life easier 
 set(groot,'defaultLineLineWidth',4)
@@ -56,7 +56,7 @@ markers = {'s','*','+','o'};
 figure;hold on; h={}; 
 maxItr = 100;
 for i=1:length(Stuff)
-    for idx =1:length(Stuff{i}.Vbar)
+    for idx =1:length(Stuff{i}.Vbar)-1
             ss = (idx-1)*maxItr; 
             a =[Stuff{i}.Vbar{idx}];
             a = a - a(end); 
@@ -101,7 +101,7 @@ for i =1:length(Stuff)
     fname = ['Results/',names{i},'iLQR','_TradMod','.gif'];
     Stuff{i}.params.filename = fname;
     simulation_Jump(Stuff{i}.xbar{5},...
-        Stuff{i}.ybar{5},Stuff{i}.rbtparams,Stuff{i}.params,true)
+        Stuff{i}.ybar{5},Stuff{i}.rbtparams,Stuff{i}.params,false)
 %     norm(Stuff{i}.ybar{idx}(:))
 end
 
@@ -135,10 +135,10 @@ ylabel('Force (Nm)','Interpreter','latex');
 %% Plot Ybar - Friction cone wise
 
 dt = 0.001;
-len = 585;
+ybar =  Stuff{1}.ybar{5};
+len = length(ybar);
 tspan = dt*(0:len-1);
 
-ybar =  Stuff{2}.ybar{5};
 figure;
 subplot(2,1,1)
 plot(tspan,ybar(1,:,1),'DisplayName','$F_{x}$'); hold on; 
@@ -162,6 +162,7 @@ title('DDP: $F_{\rm{bc}}$','interpreter','latex'); legend;
 
 %% Plot some ubar 
 figure;
+h={};
 for idx = 1:4
     subplot(2,2,idx)
     for i =1:length(Stuff) 
@@ -186,7 +187,7 @@ ylabel(['u',num2str(idx),' (N)'],'Interpreter','latex');
 end
 bb=legend([h{:}],'Location','best'); 
 bb.Box='off'
-
+%%
 hold all
 x = [1 1]*maxItr; 
 h = gca; hold on 

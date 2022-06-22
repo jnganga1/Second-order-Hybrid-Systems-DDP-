@@ -52,7 +52,7 @@ Q_bs = 0.01*diag([0,5,5,2,2,5,5,...
 S_bs = 0.1*eye(y_size);      
 
 % terminal cost
-Qf_bs = 20*diag([0,.5,5,5,5,5,5,...
+Qf_bs = 50*diag([0,.5,5,5,5,5,5,...
                   10,8,0.1,8,8,0,0]);   
               
 %%%%%%%%%%% f1 %%%%%%%%
@@ -73,7 +73,7 @@ Q_fs= 0.01*diag([0,.5,5,5,5,2,2,...
 S_fs = 0.1*eye(y_size);
 
 % Phase Final Cost
-Qf_fs = 10*diag([0,.5,5,5,5,5,5,...
+Qf_fs = 50*diag([0,.5,5,5,5,5,5,...
                   10,8,0.1,0,0,8,8]);   
 
 
@@ -84,7 +84,7 @@ Q_f2 = 0.01*diag([0,.5,5,5,5,5,5,...
                   8,2,1,10,10,10,10]);
 
 % Phase Final cost
-Qf_f2 = 5*diag([0,.5,8,5,5,5,5,...
+Qf_f2 = 50*diag([0,.5,8,5,5,5,5,...
                  10,1,0.1,8,8,8,8]); 
 
 
@@ -92,12 +92,30 @@ Qf_f2 = 5*diag([0,.5,8,5,5,5,5,...
        
 %% set up cost
 % running cost
+% R_f2(1,2) = .01; 
+% R_f2(1,3) = .01; 
+% R_f2(1,4) = .01; 
+% R_f2(2,1) = .02; 
+% R_f2(2,3) = .02;
+% R_f2(2,4) = .02;
+% R_f2(3,1) = .02;
+% R_f2(4,1) = .02;
+% R_f2(3,2) = .01;
+% R_f2(4,1) = .01;
+% R_f2(4,2) = .02;
+% R_f2(4,3) = .02 ;
+% R_f2 = 0.01* R_f2
+
+% Convex cost 
+%
 l_continuous = ...
     [(x - x_bs_ref)'*Q_bs*(x - x_bs_ref)+u'*R_bs*u+(y - GRF_g)'*S_bs*(y - GRF_g);   % bs
      (x - x_f1_ref)'*Q_f1*(x - x_f1_ref) + u'*R_f1*u;                               % f1 
      (x - x_fs_ref)'*Q_fs*(x - x_fs_ref)+u'*R_fs*u+(y - GRF_g)'*S_fs*(y - GRF_g);   % fs
-     (x - x_f2_ref)'*Q_f2*(x - x_f2_ref) + u'*R_f2*u];                              % f2 
+     (x - x_f2_ref)'*Q_f2*(x - x_f2_ref) + (u)'*R_f2*(u)];                              % f2 
+%      atan((x - x_f2_ref))'*Q_f2*atan((x - x_f2_ref)) + atan(u)'*R_f2*atan(u)];                              % f2 
 
+ 
 l = l_continuous*dt; 
 
 % Augmented Lagrangian
@@ -120,8 +138,40 @@ LF_no_mu = ...
      1/2*(x - x_fs_ref)'*Qf_fs*(x - x_fs_ref);   % fs
      1/2*(x - x_f2_ref)'*Qf_f2*(x - x_f2_ref);];   % f2
 
-        
-  
+%Nonconvex Cost 
+% Add { at next line to close
+%{
+l_continuous = ...
+    [atan(x - x_bs_ref)'*Q_bs*atan(x - x_bs_ref)+atan(u)'*R_bs*atan(u)+atan(y - GRF_g)'*S_bs*atan(y - GRF_g);   % bs
+     atan(x - x_f1_ref)'*Q_f1*atan(x - x_f1_ref) + atan(u)'*R_f1*atan(u);                               % f1 
+     atan(x - x_fs_ref)'*Q_fs*atan(x - x_fs_ref)+atan(u)'*R_fs*atan(u)+atan(y - GRF_g)'*S_fs*atan(y - GRF_g);   % fs
+%      (x - x_f2_ref)'*Q_f2*(x - x_f2_ref) + (u)'*R_f2*(u)];                              % f2 
+     atan((x - x_f2_ref))'*Q_f2*atan((x - x_f2_ref)) + atan(u)'*R_f2*atan(u)];  
+ 
+ 
+l = l_continuous*dt; 
+
+% Augmented Lagrangian
+mu = sym('mu',[1,2],'real'); % mu(1) Lagragian multiplier, mu(2) penalty coefficient
+
+syms h1 h2 real % height function of swing foot
+h1 = violation_meas(q,robot_params, 2); % front leg touch down
+h2 = violation_meas(q,robot_params, 4); % back leg touch down
+
+% terminal cost
+lf_phase = ...
+    [1/2*atan(x - x_bs_ref)'*Qf_bs*atan(x - x_bs_ref);                                          % bs
+     1/2*atan(x - x_f1_ref)'*Qf_f1*atan(x - x_f1_ref) + 50*(mu(1)*h1 + (1/2*mu(2))^2*h1^2);     % f1    
+     1/2*atan(x - x_fs_ref)'*Qf_fs*atan(x - x_fs_ref);                                          % fs
+     1/2*atan(x - x_f2_ref)'*Qf_f2*atan(x - x_f2_ref) + 50*(mu(1)*h2 + (1/2*mu(2))^2*h2^2);];   % f2
+
+LF_no_mu = ...
+    [1/2*atan(x - x_bs_ref)'*Qf_bs*atan(x - x_bs_ref);   % bs
+     1/2*atan(x - x_f1_ref)'*Qf_f1*atan(x - x_f1_ref);   % f1    
+     1/2*atan(x - x_fs_ref)'*Qf_fs*atan(x - x_fs_ref);   % fs
+     1/2*atan(x - x_f2_ref)'*Qf_f2*atan(x - x_f2_ref);];   % f2
+ 
+%}
 
 % Jacobian and hessian
 lx = jacobian(l,x);

@@ -38,3 +38,4 @@ for i = 1:model.NB
 %   out = out + w{i}'*(model.I{i}*a{i} + crf(v{i})*model.I{i}*v{i});
    out = out +  w{i}'*f{i};
 end
+

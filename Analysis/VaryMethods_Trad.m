@@ -4,40 +4,46 @@ OtherTests.Run = false;
 OtherTests.randomInit = false;
 
 %Using iLQR method - no regularization
-iLQR = 1; Method = 'none';
-iLQR_store  = DDP_2DQuadruped(iLQR,Method,0,Itgr,OtherTests);
-1==1;
+iLQR = 1; Method = 'none'; Reg =1;
+iLQR_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
 
+%
 %using DDP, regularization: Trad, Method: ExtMod 
 iLQR = 0; Method = 2; Reg = 1;
 DDP_ExtMod_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
 
-%
-%using DDP, regularization: Trad, Method: Explicit 
-iLQR = 0; Method = 1; Reg = 1;
-DDP_Exp_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
 
-%using DDP, regularization: Trad, Method: ExtMod 
+%using DDP, regularization: Trad, Method: Tensor 
 iLQR = 0; Method = 3; Reg = 1;
 DDP_Tens_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
 
-
-save('MatData/Trad_Methods_compare.mat');
+save('MatData/Trad_Methods_5AL_fixed_ReModded.mat');
+% save('MatData/Trad_Methods_fixed.mat');
 
 %%
 close all; clear; clc; 
-load('MatData/Trad_Methods_compare.mat');
+load('crcMatData_New/Trad_Methods_compare_WithReg.mat');
+%%
 
+load('Data_BoundingNewNew/Trad_Methods_fixed.mat'); 
+
+
+load('NonConvexData/New/Trad_Methods_fixed_nonconvex.mat');
+
+%%
 %Making defaults makes life easier 
 set(groot,'defaultLineLineWidth',4)
 set(groot, 'defaultAxesTickLabelInterpreter','latex');
 set(groot, 'defaultLegendInterpreter','latex');
 set(0,'defaultAxesFontSize',15)
+%
+% load('NonConvexData/Trad_Methods_fixed_nonconvex.mat');
 
+%
 %Keep this order for clean code
 colors = {'r','b','k','c'};
 names = {'iLQR', 'E-ModRNEA DDP','Explicit DDP','Tensor DDP'};
-Stuff = {iLQR_store, DDP_ExtMod_store,DDP_Exp_store,DDP_Tens_store}; 
+Stuff = {iLQR_store}%,DDP_ExtMod_store};%,DDP_Exp_store,DDP_Tens_store}; 
 
 % Cost vs Iterations
 figure;hold on; h ={};
@@ -50,6 +56,24 @@ G=gca; G.YScale = 'log';
 xlabel('Iterations','Interpreter','latex'); 
 ylabel('Cost','Interpreter','latex'); 
 
+%%
+
+for i=1:length(Stuff)
+    fprintf(['End Cost',names{i},':\n'])
+%     vpa(Stuff{i}.Vbar{5}(end),1000)
+    vpa(Stuff{i}.params.mu1,1000)
+    vpa(Stuff{i}.params.mu2,1000)
+%     Stuff{i}.params.delta
+    
+end
+%%
+figure;hold on; h ={};
+for i=1:length(Stuff)
+    a = [Stuff{i}.Vbar{1}];     
+%     a = flipud(a);
+    h{i}= semilogy(a- a(end),'DisplayName',names{i},'Color',colors{i}); 
+end
+legend
 
 %% Cost at each update vs Iterations
 markers = {'s','*','+','o'}; 
@@ -72,7 +96,7 @@ grid on; grid minor;
 G=gca; G.YScale = 'log';
 xlabel('Iterations','Interpreter','latex'); 
 ylabel('Cost','Interpreter','latex');
-dd = 100*[1:4];
+dd = 100*[1:8];
 for i=1:length(dd)
     ssLine = dd(i)*ones(1,10); 
     bb = gca; bb = linspace(bb.YLim(1),bb.YLim(2),10);
@@ -98,10 +122,10 @@ disp('Time');
 Time
 %% Do some simulations and save the gif
 for i =1:length(Stuff)
-    fname = ['Results/',names{i},'iLQR','_Trad','.gif'];
+    fname = ['Data_BoundingNewNew/Results/',names{i},'iLQR','_Trad','.gif'];
     Stuff{i}.params.filename = fname;
     simulation_Jump(Stuff{i}.xbar{5},...
-        Stuff{i}.ybar{5},Stuff{i}.rbtparams,Stuff{i}.params,true)
+        Stuff{i}.ybar{5},Stuff{i}.rbtparams,Stuff{i}.params,false)
 %     norm(Stuff{i}.ybar{idx}(:))
 end
 
@@ -135,7 +159,7 @@ ylabel('Force (Nm)','Interpreter','latex');
 %% Plot Ybar - Friction cone wise
 
 dt = 0.001;
-ybar =  Stuff{2}.ybar{5};
+ybar =  Stuff{1}.ybar{5};
 len = length(ybar);
 tspan = dt*(0:len-1);
 
@@ -145,7 +169,7 @@ figure;
 subplot(2,1,1)
 plot(tspan,ybar(1,:,1),'DisplayName','$F_{x}$'); hold on; 
 xlabel('time s','Interpreter','latex');
-ylabel('$GRF force$','interpreter','latex');
+ylabel('GRF forces, $N$','interpreter','latex');
 plot(tspan,0.7*ybar(2,:,1),'r','DisplayName','$0.7 F_{z}$');
 plot(tspan,-0.7*ybar(2,:,1),'r--','DisplayName','$-0.7 F_{z}$');
 title('DDP: $F_{\rm{fr}}$','interpreter','latex'); hold off
@@ -159,7 +183,7 @@ title('$F_{\rm{bc}}$','interpreter','latex');
 plot(tspan,0.7*ybar(2,:,2),'r','DisplayName','$0.7 F_{z}$');
 plot(tspan,-0.7*ybar(2,:,2),'r--','DisplayName','$-0.7 F_{z}$');
 xlabel('time s','interpreter','latex');
-ylabel('$GRF forces$','interpreter','latex');
+ylabel('GRF forces, $N$','interpreter','latex');
 title('DDP: $F_{\rm{bc}}$','interpreter','latex'); legend;
 
 %% Plot some ubar 
@@ -185,13 +209,15 @@ for idx = 1:4
 grid on; 
 grid minor;
 xlabel('Time(s)','Interpreter','latex');
-ylabel(['u',num2str(idx),' (N)'],'Interpreter','latex'); 
+ylabel(['u',num2str(idx),' (Nm)'],'Interpreter','latex'); 
 end
 bb=legend([h{:}],'Location','best'); 
 bb.Box='off'
+%
+iAL = 5;
 
-fprintf('Max U: %.2f\n', max(max(Stuff{2}.ubar{5})));
-fprintf('Max U: %.2f\n', min(min(Stuff{2}.ubar{5})));
+fprintf('Max U: %.2f\n', max(max(Stuff{1}.ubar{iAL})));
+fprintf('Max U: %.2f\n', min(min(Stuff{1}.ubar{iAL})));
 %%
 hold all
 x = [1 1]*maxItr; 
@@ -203,3 +229,100 @@ hold off
 h = legend;
 h.Location = 'best';
 h.String(5:end) = '';
+%% Plot xbar 
+
+figure; G = {};
+for idx = 1:length(Stuff)
+    for i = 1:7
+        subplot(2,4,i); hold on;
+        G{1}=plot(Stuff{idx}.xbar{5}(i,:),'LineWidth',2);
+        hold on; 
+        grid on; grid minor;
+        ylabel(['x',num2str(i)],'Interpreter','latex');
+        xlabel('Time','Interpreter','latex');
+    end
+end
+sgtitle('${q_i}$','Interpreter','latex'); 
+
+figure; G = {};
+for idx = 1:length(Stuff)
+    for i = 1:7
+        subplot(2,4,i); hold on;
+        G{1}=plot(Stuff{idx}.xbar{5}(i+7,:),'LineWidth',2);
+        hold on; 
+        grid on; grid minor;
+        ylabel(['x',num2str(i+7)],'Interpreter','latex');
+        xlabel('Time','Interpreter','latex');
+    end
+end
+sgtitle('${\dot{q}_i}$','Interpreter','latex'); 
+
+%% Plot ubar
+
+
+figure; G = {};
+for idx = 1:length(Stuff)
+    for i = 1:4
+        subplot(2,2,i); hold on;
+        G{1}=plot(Stuff{idx}.ubar{5}(i,:),'LineWidth',2);
+        hold on; 
+        grid on; grid minor;
+        ylabel(['u',num2str(i)],'Interpreter','latex');
+        xlabel('Time','Interpreter','latex');
+    end
+end
+sgtitle('${u}$','Interpreter','latex'); 
+
+
+%%
+dt = 0.001;
+ybar =  Stuff{1}.ybar{5};
+len = length(ybar);
+tspan = dt*(0:len-1);
+
+
+
+figure;
+subplot(2,1,1)
+plot(tspan,ybar(1,:,1),'DisplayName','$F_{x}$'); hold on; 
+xlabel('Time (s)','Interpreter','latex');
+ylabel('GRF forces, $N$','interpreter','latex');
+plot(tspan,0.7*ybar(2,:,1),'r','DisplayName','$0.7 F_{z}$');
+plot(tspan,-0.7*ybar(2,:,1),'r--','DisplayName','$-0.7 F_{z}$');
+% title('DDP: $F_{\rm{fr}}$','interpreter','latex'); hold off
+bb=legend; 
+bb.Location='best'; 
+bb.Box='off';
+grid on; grid minor;
+
+subplot(2,1,2)
+h={};
+names = {'iLQR','DDP'};
+for idx = 1:1
+%     subplot(2,2,idx)
+    for i =1:length(Stuff) 
+        for id=idx
+            u1 = Stuff{i}.ubar{5}(idx,:);
+            dt = 1e-3; time = 0:dt:(length(u1)-1)*dt;
+            h{i} =plot(time,u1,...
+                'DisplayName',names{i},'Color',colors{i});hold on%,...
+    %             'Marker',none);hold on;
+        end 
+    end
+    bb=gca;
+    maxu = 34;
+    plot([bb.XLim(1) bb.XLim(2)],[-maxu -maxu],'k--');
+    plot([bb.XLim(1) bb.XLim(2)],[maxu maxu],'k--');
+    
+
+grid on; 
+grid minor;
+xlabel('Time(s)','Interpreter','latex');
+ylabel(['u',num2str(idx),' (Nm)'],'Interpreter','latex'); 
+end
+bb=legend([h{:}],'Location','best'); 
+bb.Box='off'
+
+
+xlim([time(1) time(end)]);
+

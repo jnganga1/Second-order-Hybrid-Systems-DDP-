@@ -352,9 +352,19 @@ Dyn_funcs.kkt_bc_Im_first = Function('bc_Im_first',{x,u},{
 %   muHvec = [mu;muf]'*bc_K*aVec; 
   % Returns mu * [H qdd + bc_K *f]
   [muHvec_v2,a_jnt,~,v_jnt] =modID_casadi_Extended(robot_no_grav,q,qd*0,qdd,mu,bc_force_q__MX);
- [bcqdd] = -jntToTask(a_jnt,v_jnt,q,robot_params,bc,0);
+  [bcqdd] = -jntToTask(a_jnt,v_jnt,q,robot_params,bc,0);
   muHvec = muHvec_v2 + muf' * bcqdd;  
+
+  CARE = CntAcc(a_jnt,v_jnt,q,robot_params,bc,0);
   
+  qVal  = rand(size(q)); qdVal = rand(size(qd));
+  mufVal = rand(size(muf)); aVecVal = rand(size(aVec));
+  comp1 =  Function('comp1', {q,qd,aVec,muf},  {CARE} );
+  comp2 =  Function('comp2', {q,qd,aVec,muf},  {bcqdd} );
+  
+  comp1(qVal,qdVal,aVecVal,mufVal)
+  comp2(qVal,qdVal,aVecVal,mufVal)
+
   %Derivs 
   part31a_Brb = jacobian(mu_rhs_q,q); 
   part31b_Brb = jacobian(jacobian(muHvec,q),q);
@@ -546,6 +556,28 @@ Dyn_funcs.kkt_bc_Im_first = Function('bc_Im_first',{x,u},{
     [A,a_jnt,~,v_jnt] = modID_casadi_Extended(robot_no_grav,q,0*qd,nu_tau,mu,ft_tau_ext_MX); 
     ftJnutau = muf'*jntToTask(a_jnt,v_jnt,q,robot_params,ft,0);
     ExtraParts_tau = A - ftJnutau;
+    
+        
+%     A = mubyX(muf,q,robot_params,ft)
+%     [out2] = modID_casadi_Extended_ALL( robot, q, qd, qdd,mu,ft_force_q__MX,A)
+%     
+%     acc2 = Function('acc',{q,qd,aVec,bb},{out_Extended + acc_act});
+%     acc3 = Function('here',{q,qd,aVec,bb},{out2});
+%     
+%     qVal = rand(size(q)); mufVal = rand(size(muf));
+%     qdVal = rand(size(qd)); AvecVal = rand(size(aVec));
+%     mu = rand(size(mu));
+%     
+%     aa = acc2(qVal,qdVal,AvecVal,[mu;mufVal])
+%     cc=acc3(qVal,qdVal,AvecVal,[mu;mufVal])
+    
+    
+    
+    
+    
+    
+    
+    
     
     %Second partials of Extended Mod RNEA with q
     d=hessian(-out_Extended + acc_act,q);
@@ -819,6 +851,19 @@ Dyn_funcs.kkt_bc_Im_first = Function('bc_Im_first',{x,u},{
 %% Set All The Functions 
 
 Dyn_funcs.Exp.Ft_stnce = ft_OutSecondMat_fn; 
+
+
+
+a = rand(14,1); b = rand(4,1); c = rand(9,1);
+
+[~,tens_xx,~]=ft_tensor(a,b);
+tens_xx = reshape(full(tens_xx),[7+2,7*2,7*2]);
+fgxx = Tens3byVec(tens_xx,c','pre');
+
+[~,A,~]= ft_ExtMod_OutSecondMat_fn(a,b,c); 
+full(fgxx - A)
+
+
 Dyn_funcs.Exp.Bc_stnce = bc_OutSecondMat_fn; 
 Dyn_funcs.Exp.Fr_Dyn = fr_OutSecondMat_fn; 
 Dyn_funcs.Exp.Ft_Imp = ft_Im_OutSecondMat_fn; 
@@ -831,12 +876,66 @@ Dyn_funcs.ExtMod.Ft_Imp = ft_Im_ExtMod_OutSecondMat_fn;
 Dyn_funcs.ExtMod.Bc_Imp = bc_Im_ExtMod_OutSecondMat_fn;
 
 Dyn_funcs.Tens.Ft_stnce = ft_tensor; 
+
+
+
 Dyn_funcs.Tens.Bc_stnce = bc_tensor; 
 Dyn_funcs.Tens.Fr_Dyn = fr_tensor;
 Dyn_funcs.Tens.Ft_Imp = ft_Im_tensor;
 Dyn_funcs.Tens.Bc_Imp = bc_Im_tensor;
 
   
+
+end
+
+function [a_m] = mubyX(muVec,q,robot_params,ftorbc) 
+%Front/rear foot Transformation Matrix in inertia frame
+[~,T_front,T_rear] = fkin_quadruped_2D(q, robot_params);
+a_m =  cell(length(q),1);
+for i=1:length(q)
+    a_m{i} = casadi.MX.zeros(1,6);
+end 
+
+% B=casadi.MX.zeros(6,6);
+% B(4,4) = muVec(1); 
+% B(6,6) = muVec(2);
+B = [0,0,0,muVec(1),0,muVec(2)];
+if ftorbc == 1     
+  %muT * Acceleration of knee joint felt at the foot expressed in inertial Frame
+  a_cnt = B * pluho(T_front);
+%   a_m{5} = [a_cnt(4:end)]';
+  a_m{5} = a_cnt;
+else
+  a_cnt = B * pluho(T_rear);
+%   a_m{7} = [a_cnt(4:end)]';
+   a_m{7} = a_cnt;
+end
+
+end
+
+function [a_cnt]= CntAcc(a_jnt,v_jnt,q,robot_params,ftorbc,gravComp) 
+%This Function is cleaner than jntToTask -> will clean up later 
+
+%Front/rear foot Transformation Matrix in inertia frame
+[~,T_front,T_rear] = fkin_quadruped_2D(q, robot_params); 
+LinkLength = robot_params.kneelinkLength;
+
+if ftorbc == 1     
+  %Acceleration of knee joint felt at the foot expressed in inertial Frame
+  a_cnt = pluho(T_front)* [0;0;0;Vpt(a_jnt{5},[0, 0, -LinkLength]')];
+  corriolis = pluho(T_front)* [0;0;0;Vpt(v_jnt{5},[0, 0, -LinkLength]')];
+  a_cnt = a_cnt + corriolis;
+else
+  a_cnt = pluho(T_rear)* [0;0;0;Vpt(a_jnt{7},[0, 0, -LinkLength]')];
+  corriolis = pluho(T_rear)* [0;0;0;Vpt(v_jnt{7},[0, 0, -LinkLength]')];
+  a_cnt = a_cnt + corriolis;
+end
+
+if gravComp 
+    a_cnt = a_cnt - [0 0 0 0 0 9.81*1]';
+end
+%Remove the y component 
+a_cnt = -[a_cnt(4);a_cnt(6)];
 
 end
 function [a_cnt,v_cnt]= jntToTask(a_jnt,v_jnt,q,robot_params,ftorbc,gravComp) 
