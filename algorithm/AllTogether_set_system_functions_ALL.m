@@ -3,6 +3,8 @@ addpath([pwd '/support']);
 addpath([pwd '/algorithm']);
 import casadi.*
 
+CodeGen = 0;
+
 x_size = length(x);
 u_size = length(u);
 q_size = length(x)/2; Nb=q_size;
@@ -304,10 +306,43 @@ Dyn_funcs.kkt_bc_Im_first = Function('bc_Im_first',{x,u},{
     ft_ExtMod_OutSecondMat_fn = Function('ExtMod_OutSecondMat_fn',{x,u,bb},{all_ft_dyn,ft_OutSecondMat,ft_OutQTau}); 
 %%  Back Stance Dynamics             
     mufbyX = mubyX(muf,q,robot_params,bc);
+    
     [out_simp] = modID_casadi_Extended_ALL(robot,q,qd,qdd,mu,bc_force_q__MX,mufbyX);
+    
     [out_qd] = modID_casadi_Extended_ALL(robot_no_grav,q,0*qd,nu_qd,mu,bc_qd_ext_MX,mufbyX);
     [out_tau] = modID_casadi_Extended_ALL(robot_no_grav,q,0*qd,nu_tau,mu,bc_tau_ext_MX,mufbyX);
     [out_q] = modID_casadi_Extended_ALL(robot_no_grav,q,0*qd,nu_q,mu,bc_q_ext_MX,mufbyX);
+    
+    %kkt deriv with qd
+%     Dyn_funcs.KKT_qd_only = Function('KKT_qd',{x,u},{jacobian(bc_dyn,qd)});
+%     %rnea deriv with qd 
+%     Dyn_funcs.Rnea_qd_only = Function('RNEA_qd',{x,u,bb},{jacobian(out_simp,qd)});%derivs of mrneac
+%     %we need eeta = K^{-1}* gamma
+%     HH = Dyn_funcs.Rnea_qd_only(x,u,-1.0*bc_Kinv_vec_T(x,bb)); 
+%     Dyn_funcs.RNEA_qd = Function('Final',{x,u,bb},{HH});
+%     %Lets evaluate and see if they're the same answer
+%     
+%     xVal = rand(size(x)); uVal =rand(size(u)); muVal = rand(size(mu)); mufVal = rand(size(muf)); 
+%     fprintf("FO via KKT_qd");
+%     full([muVal;mufVal]' * Dyn_funcs.KKT_qd_only(xVal,uVal))
+%     fprintf("FO via RNEA");
+%     full(Dyn_funcs.RNEA_qd(xVal,uVal,[muVal;mufVal]))
+%     
+%     %repeat above with q 
+%     Dyn_funcs.KKT_q_only = Function('KKT_q',{x,u},{jacobian(bc_dyn,q)});
+%     Dyn_funcs.Rnea_q_only = Function('RNEA_q',{x,u,aVec,bb},{jacobian(out_simp,q)}); 
+%     HH = Dyn_funcs.Rnea_q_only(x,u,bc_dyn,-1.0*bc_Kinv_vec_T(x,bb)); 
+%     Dyn_funcs.RNEA_q = Function('Final_q',{x,u,bb},{HH});
+%     fprintf("FO via KKT_q");
+%     full([muVal;mufVal]' * Dyn_funcs.KKT_q_only(xVal,uVal))
+%     fprintf("FO _q via RNEA")
+%     full(Dyn_funcs.RNEA_q(xVal,uVal,[muVal;mufVal]))
+%     1==1; 
+%     T2=jacobian(-out_q ,q);
+%         Dyn_funcs.T2 = Function('T2',{x,u,FOP},{T2});
+
+    
+
 
     %Second partials of Extended Mod RNEA with q
     d=hessian(-out_simp,q); b=jacobian(-out_q ,q);
@@ -383,6 +418,7 @@ Dyn_funcs.kkt_bc_Im_first = Function('bc_Im_first',{x,u},{
     [out_tau] = modID_casadi_Extended_ALL(robot_no_grav,q,0*qd,nu_tau,mu,ft_tau_ext_MX,mufbyX);
     [out_q] = modID_casadi_Extended_ALL(robot_no_grav,q,0*qd,nu_q,mu,ft_q_ext_MX,mufbyX);  
     
+    
     %Second partials of Extended Mod RNEA with qq
     b = jacobian(out_q,q);
     ExtModRNEA_qq_V2 =  hessian(out_simp,q) - (b+b');
@@ -441,6 +477,7 @@ Dyn_funcs.ExtMod.Fr_Dyn = fr_ExtMod_OutSecondMat_fn;
 Dyn_funcs.ExtMod.Ft_Imp = ft_Im_ExtMod_OutSecondMat_fn;
 Dyn_funcs.ExtMod.Bc_Imp = bc_Im_ExtMod_OutSecondMat_fn;
 
+
 %Tensor
 Dyn_funcs.Tens.Ft_stnce = ft_tensor; 
 Dyn_funcs.Tens.Bc_stnce = bc_tensor; 
@@ -448,14 +485,32 @@ Dyn_funcs.Tens.Fr_Dyn = fr_tensor;
 Dyn_funcs.Tens.Ft_Imp = ft_Im_tensor;
 Dyn_funcs.Tens.Bc_Imp = bc_Im_tensor;
 
-%Does it work
-% a = rand(14,1); b = rand(4,1); c = rand(9,1);
-% [~,tens_xx,~]=bc_Im_tensor(a,b);
-% tens_xx = reshape(full(tens_xx),[7+2,7*2,7*2]);
-% fgxx = Tens3byVec(tens_xx,c','pre');
-% [~,A,~]= bc_Im_ExtMod_OutSecondMat_fn(a,b,c); 
-% full(fgxx - A)
-% 1==1; %a breakpoint
+
+if CodeGen 
+    cg_options = struct;
+    cg_options.casadi_real = 'real_T';
+    cg_options.casadi_int = 'int_T';
+    cg_options.with_header = true;
+    cg_options.cpp = true; 
+    
+    cg = CodeGenerator('ft_ExtMod_OutSecondMat_fn',cg_options);    cg.add(ft_ExtMod_OutSecondMat_fn); cg.generate();
+    cg = CodeGenerator('bc_ExtMod_OutSecondMat_fn',cg_options);    cg.add(bc_ExtMod_OutSecondMat_fn); cg.generate();
+    cg = CodeGenerator('fr_ExtMod_OutSecondMat_fn',cg_options);    cg.add(fr_ExtMod_OutSecondMat_fn); cg.generate();
+    cg = CodeGenerator('ft_Im_ExtMod_OutSecondMat_fn',cg_options); cg.add(ft_Im_ExtMod_OutSecondMat_fn); cg.generate();
+    cg = CodeGenerator('bc_Im_ExtMod_OutSecondMat_fn',cg_options); cg.add(bc_Im_ExtMod_OutSecondMat_fn); cg.generate();
+    
+    cg = CodeGenerator('ft_tensor',cg_options);    cg.add(ft_tensor); cg.generate();
+    cg = CodeGenerator('bc_tensor',cg_options);    cg.add(bc_tensor); cg.generate();
+    cg = CodeGenerator('fr_tensor',cg_options);    cg.add(fr_tensor); cg.generate();
+    cg = CodeGenerator('ft_Im_tensor',cg_options); cg.add(ft_Im_tensor); cg.generate();
+    cg = CodeGenerator('bc_Im_tensor',cg_options); cg.add(bc_Im_tensor); cg.generate();
+    
+    cg = CodeGenerator('bc_dyn',cg_options); cg.add(Dyn_funcs.bc_dyn); cg.generate();
+    cg = CodeGenerator('ft_dyn',cg_options); cg.add(Dyn_funcs.ft_dyn); cg.generate();
+    cg = CodeGenerator('BckJac',cg_options); cg.add(Dyn_funcs.BckJac); cg.generate();
+    cg = CodeGenerator('FrntJac',cg_options); cg.add(Dyn_funcs.FrntJac); cg.generate();
+    
+end
 
 
   

@@ -5,7 +5,7 @@ close all; clear; clc;
 Itgr = 1;
 OtherTests.Run = true; 
 OtherTests.randomInit = false;
-OtherTests.maxItr = 100;
+OtherTests.maxItr = 50 ;
 OtherTests.dt = 1e-3;
 OtherTests.BeforeNoise = false;
 
@@ -15,7 +15,7 @@ OtherTests.varyU  = true; %care about varying u in this round
 iLQR_Box = {}; ExtMod_Box ={};
 Exp_Box = {}; Tens_Box= {};
 
-iNumber = 40; 
+iNumber = 50; 
 
 cWork = {};
 
@@ -74,26 +74,26 @@ end
 % plot(Tens_Box{1}.Vbar{:},'DisplayName','Tens');
 % legend
 
-save('MatData/VaryU_Noise_ShortRuns_Not_Tens_fixed_ReModded2.mat');
+save('MatData/VaryU_Noise_ShortRuns_Not_Tens_Data.mat');
 
 %%
 set(groot,'defaultLineLineWidth',4)
 set(groot, 'defaultAxesTickLabelInterpreter','latex');
 set(groot, 'defaultLegendInterpreter','latex');
 set(0,'defaultAxesFontSize',15)
-close all; clear; clc;
+% close all; clear; clc;
 % load('crcMatData/VaryU_Noise_MultiRuns_Again.mat');
 % load('MatData/VaryU_Noise_ShortRuns_WithReg.mat');
 % % load('MatData/VaryU_Noise_MultiRuns_Again.mat');
-load('crcMatData_New/VaryU_Noise_ShortRuns_WithReg.mat');
+% load('crcMatData_New/VaryU_Noise_ShortRuns_WithReg.mat');
 
 %%
-load('Data_BoundingNewNew/VaryU_Noise_ShortRuns_Not_Tens_fixed.mat');
+% load('Data_BoundingNewNew/VaryU_Noise_ShortRuns_Not_Tens_fixed.mat');
 
 %%
 
 colors = {'r','b','k','c'};
-names = {'iLQR', 'E-ModRNEA DDP','Explicit DDP','Tensor DDP'};
+names = {'iLQR', 'mRNEAc DDP','Tensor DDP'};
 
 iLQR_Box_Time = cell(iScal,iRepts);
 ExtMod_Box_Time = cell(iScal,iRepts);
@@ -132,15 +132,15 @@ for idx = 1:iScal
             ExtMod_Box_Vbar{idx,i} = nan; 
             ExtMod_normU{idx,i}  = nan; 
         end
-        try
-            Exp_Box_Vbar{idx,i} =  Exp_Box{idx,i}.VnoMu{:}(end); 
-            Exp_Box_Time{idx,i} =  Exp_Box{idx,i}.Time; 
-            Exp_normU{idx,i}    = norm(Exp_Box{idx,i}.ubar{:});
-        catch
-            Exp_Box_Time{idx,i} = nan;
-            Exp_Box_Vbar{idx,i} = nan; 
-            Exp_normU{idx,i} = nan; 
-        end
+%         try
+%             Exp_Box_Vbar{idx,i} =  Exp_Box{idx,i}.VnoMu{:}(end); 
+%             Exp_Box_Time{idx,i} =  Exp_Box{idx,i}.Time; 
+%             Exp_normU{idx,i}    = norm(Exp_Box{idx,i}.ubar{:});
+%         catch
+%             Exp_Box_Time{idx,i} = nan;
+%             Exp_Box_Vbar{idx,i} = nan; 
+%             Exp_normU{idx,i} = nan; 
+%         end
         try
             Tens_Box_Vbar{idx,i} =  Tens_Box{idx,i}.VnoMu{:}(end); 
             Tens_Box_Time{idx,i} =  Tens_Box{idx,i}.Time; 
@@ -162,18 +162,18 @@ end
 
 iLQR_Box_Vbar = cell2mat(iLQR_Box_Vbar); 
 ExtMod_Box_Vbar = cell2mat(ExtMod_Box_Vbar);
-Exp_Box_Vbar = cell2mat(Exp_Box_Vbar);
+% Exp_Box_Vbar = cell2mat(Exp_Box_Vbar);
 Tens_Box_Vbar = cell2mat(Tens_Box_Vbar);
 
 iLQR_Box_Time = cell2mat(iLQR_Box_Time); 
 ExtMod_Box_Time = cell2mat(ExtMod_Box_Time);
-Exp_Box_Time = cell2mat(Exp_Box_Time);
+% Exp_Box_Time = cell2mat(Exp_Box_Time);
 Tens_Box_Time = cell2mat(Tens_Box_Time);
 
 
 iLQR_normU   = cell2mat(iLQR_normU);
 ExtMod_normU = cell2mat(ExtMod_normU);
-Exp_normU    = cell2mat(Exp_normU);
+% Exp_normU    = cell2mat(Exp_normU);
 Tens_normU   = cell2mat(Tens_normU);
 
 ScalerG = cell2mat(ScalerG);
@@ -183,7 +183,7 @@ figure; hold on;
 for idx = 1:iRepts
     h{1}=plot(ScalerG(:,idx),iLQR_Box_Vbar(:,idx),'ro','DisplayName',names{1},'Color',colors{1});
     h{2}=plot(ScalerG(:,idx),ExtMod_Box_Vbar(:,idx),'o','DisplayName',names{2},'Color',colors{2});
-    h{3}=plot(ScalerG(:,idx),Exp_Box_Vbar(:,idx),'o','DisplayName',names{3},'Color',colors{3});
+%     h{3}=plot(ScalerG(:,idx),Exp_Box_Vbar(:,idx),'o','DisplayName',names{3},'Color',colors{3});
     h{4}=plot(ScalerG(:,idx),Tens_Box_Vbar(:,idx),'o','DisplayName',names{4},'Color',colors{4});
 
 
@@ -196,7 +196,7 @@ grid on; grid minor;
 %%  Boxplot EndCost 
 figure; 
 bp_vbar = boxplot([iLQR_Box_Vbar(:) ExtMod_Box_Vbar(:) ...
-    Exp_Box_Vbar(:) Tens_Box_Vbar(:)],names,'Whisker',50);
+        Tens_Box_Vbar(:)],names,'Whisker',50);
 
 ylabel('End Cost, 20 Iterations','Interpreter','latex')
 bb=gca;
@@ -206,7 +206,7 @@ grid on; grid minor;
 %% Boxplot Time 
 figure; 
 boxplot([iLQR_Box_Time(:) ExtMod_Box_Time(:) ...
-    Exp_Box_Time(:) Tens_Box_Time(:)],names,'Whisker',50);
+    Tens_Box_Time(:)],names,'Whisker',50);
 
 
 gg=vpa(mean([iLQR_Box_Time(:) ExtMod_Box_Time(:) ...

@@ -51,23 +51,24 @@ OtherTests.RegMethod = Reg;
 
 ExtMod_Nsd_nowOpt = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests); %DDP,ExtMod
 
-save('MatData/diditwork_again.mat')
+save('MatData/FullRuns_All_Methods_NoisedCntrlStates_BeforeNoise.mat');
 fprintf('Returning from full run')
-return
+fprintf('\nEnd of Before Noise\n')
+
 
 %%
-data = load('MatData/diditwork_again.mat')
+data = load('MatData/FullRuns_All_Methods_NoisedCntrlStates_BeforeNoise.mat');
 figure
 semilogy(data.ExtMod_Nsd_nowOpt.Vbar{:} - data.ExtMod_Nsd_nowOpt.Vbar{:}(end),'DisplayName','DDP')
 hold on; 
 semilogy(data.iLQR_Nsd_nowOpt.Vbar{:} - data.iLQR_Nsd_nowOpt.Vbar{:}(end),'DisplayName','iLQR')
 legend
 
-
-fprintf('Orig DDP End Cost:  %.6f\n', vpa(iLQR_Nsd_nowOpt.Vbar{:}(end),6))
-fprintf('Orig iLQR End Cost:  %.6f\n', vpa(iLQR_Nsd_nowOpt.Vbar{:}(end),6))
-fprintf('iLQR End Cost: %.6f\n', vpa(iLQR_Nsd_nowOpt.Vbar{:}(end),6))
-fprintf('DDP End Cost: %.6f\n', vpa(ExtMod_Nsd_nowOpt.Vbar{:}(end),6))
+% 
+% fprintf('Orig DDP End Cost:  %.6f\n', vpa(iLQR_Nsd_nowOpt.Vbar{:}(end),6))
+% fprintf('Orig iLQR End Cost:  %.6f\n', vpa(iLQR_Nsd_nowOpt.Vbar{:}(end),6))
+% fprintf('iLQR End Cost: %.6f\n', vpa(iLQR_Nsd_nowOpt.Vbar{:}(end),6))
+% fprintf('DDP End Cost: %.6f\n', vpa(ExtMod_Nsd_nowOpt.Vbar{:}(end),6))
 
 
 %%
@@ -122,21 +123,13 @@ legend
 
 
 %}
-save('MatData/VaryU_Noise_FullRun_Fixed_ReModded4.mat');
-return 
+save('MatData/FullRuns_All_Methods_NoisedCntrlStates_AfterNoise.mat');
+fprintf('\nEnd of afternoise\n')
+
+% return 
 %%
-close all; clear; clc; 
-% load('crcMatData/VaryU_Noise_FullRun_DDPstart_Again_50Scalar.mat');
-load('crcMatData_New/Latest/VaryU_Noise_FullRun_WithReg.mat');
+% close all; clear; clc; 
 %%
-
-load('NonConvexData/Trad_Methods_fixed_nonconvex_afterRun.mat');
-
-load('Data_BoundingNewNew/VaryU_Noise_FullRun_Fixed.mat');
-
-load('crcMatData_New/JohnAgain_NoConst.mat');
-%%
-
 set(groot,'defaultLineLineWidth',4)
 set(groot, 'defaultAxesTickLabelInterpreter','latex');
 set(groot, 'defaultLegendInterpreter','latex');
@@ -145,7 +138,7 @@ set(0,'defaultAxesFontSize',15)
 %Keep this order for clean code
 colors = {'r','b','k','c'};
 names = {'iLQR', 'E-ModRNEA DDP','Explicit DDP','Tensor DDP'};
-Stuff = {iLQR_Nsd_nowOpt,ExtMod_Nsd_nowOpt};%Exp_Nsd, Tens_Nsd};
+Stuff = {iLQR_Nsd,ExtMod_Nsd};%Exp_Nsd, Tens_Nsd};
 
 % gg = data.ExtMod_Nsd_ot;
 gg = [Stuff{2}.OrigOptim.ExtMod_Nsd_nowOpt]; %.Vbar{:}];
@@ -158,7 +151,7 @@ controlNoise = Stuff{1}.OtherTests.noise;
 figure; G = {};
 for i = 1:7
     subplot(2,4,i); hold on;
-    G{1}=plot(gg.xbar{5}(i,:),'LineWidth',2,'DisplayName','Optimized Before Noise'); 
+    G{1}=plot(gg.xbar{1}(i,:),'LineWidth',2,'DisplayName','Optimized Before Noise'); 
     hold on; 
     G{2}=plot(Stuff{1}.xbar{1}(i,:),'LineWidth',2,'DisplayName','Optimized After Noise'); 
     grid on; grid minor;
@@ -167,14 +160,14 @@ for i = 1:7
 end
 legend
 sgtitle('${q_i}$','Interpreter','latex'); 
-
+%
 
 %Plot previous optim states vs now optim 
 %Here it is qdot
 figure; G = {};
 for i = 1:7
     subplot(2,4,i); hold on;
-    G{1}=plot(gg.xbar{5}(i+7,:),'LineWidth',2,'DisplayName','Optimized Before Noise'); 
+    G{1}=plot(gg.xbar{1}(i+7,:),'LineWidth',2,'DisplayName','Optimized Before Noise'); 
     hold on; 
     G{2}=plot(Stuff{1}.xbar{1}(i+7,:),'LineWidth',2,'DisplayName','Optimized After Noise'); 
     grid on; grid minor;
@@ -188,7 +181,7 @@ sgtitle('$\dot{q_i}$','Interpreter','latex');
 figure; G = {};
 for i = 1:4
     subplot(2,2,i); hold on;
-    G{1}=plot(gg.ubar{5}(i,:),'LineWidth',2,'DisplayName','Optimized Before Noise'); 
+    G{1}=plot(gg.ubar{1}(i,:),'LineWidth',2,'DisplayName','Optimized Before Noise'); 
     hold on; 
     G{2}=plot(Stuff{1}.ubar{1}(i,:),'LineWidth',2,'DisplayName','Optimized After Noise'); 
     grid on; grid minor;
@@ -204,7 +197,7 @@ figure;
 subplot(2,2,1); G = {};
 for i = 1:7
     subplot(2,4,i); hold on;
-    bb = gg.xbar{5}(i,:);
+    bb = gg.xbar{1}(i,:);
     G{1}=plot(bb,'LineWidth',2,'DisplayName','x'); 
     hold on; 
     G{2}=plot(bb+stateNoise(i,1:length(bb)),'LineWidth',2,'DisplayName','x+Noise'); 
@@ -220,11 +213,11 @@ legend
 
 %%
 
-% figure; G = {};
+figure; G = {};
 subplot(2,2,2); G = {};
 for i = 1:4
     subplot(2,2,i); hold on;
-    bb=gg.ubar{5}(i,:);
+    bb=gg.ubar{1}(i,:);
     G{1}=plot(bb,'LineWidth',2,'DisplayName','u'); 
     hold on; 
     G{2}=plot(bb+controlNoise(i,1:length(bb)),'LineWidth',2,'DisplayName','u+Noise'); 
@@ -367,7 +360,7 @@ colors = {'r','b','k','c'};
 % Stuff = {iLQR_Nsd5,ExtMod_Nsd5};
 names = {'iLQR', 'E-ModRNEA DDP','Explicit DDP','Tensor DDP'};
 for i =1:length(Stuff)
-    fname = ['Results/crcMatData_New/',names{i},'iLQR','_LargeNoiseControl','.gif'];
+    fname = ['Results/',names{i},'iLQR','_LargeNoiseControl','.gif'];
     Stuff{i}.params.filename = fname;
     simulation_Jump(Stuff{i}.xbar{1},...
         Stuff{i}.ybar{1},Stuff{i}.rbtparams,Stuff{i}.params,false)

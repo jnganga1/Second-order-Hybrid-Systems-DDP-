@@ -3,33 +3,26 @@ Itgr = 1; %DON'T CHANGE ME
 OtherTests.Run = false; 
 OtherTests.randomInit = false;
 
+%%
 %Using iLQR method - no regularization
 iLQR = 1; Method = 'none'; Reg =1;
 iLQR_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
 
-%
+
+%%
 %using DDP, regularization: Trad, Method: ExtMod 
 iLQR = 0; Method = 2; Reg = 1;
 DDP_ExtMod_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
 
-
+%%
 %using DDP, regularization: Trad, Method: Tensor 
 iLQR = 0; Method = 3; Reg = 1;
 DDP_Tens_store  = DDP_2DQuadruped(iLQR,Method,Reg,Itgr,OtherTests);
-
-save('MatData/Trad_Methods_5AL_fixed_ReModded.mat');
-% save('MatData/Trad_Methods_fixed.mat');
+%%
+save('MatData/VaryMethods_Trad_Data.mat');
 
 %%
-close all; clear; clc; 
-load('crcMatData_New/Trad_Methods_compare_WithReg.mat');
-%%
-
-load('Data_BoundingNewNew/Trad_Methods_fixed.mat'); 
-
-
-load('NonConvexData/New/Trad_Methods_fixed_nonconvex.mat');
-
+% close all; clearvars; clc; 
 %%
 %Making defaults makes life easier 
 set(groot,'defaultLineLineWidth',4)
@@ -37,13 +30,14 @@ set(groot, 'defaultAxesTickLabelInterpreter','latex');
 set(groot, 'defaultLegendInterpreter','latex');
 set(0,'defaultAxesFontSize',15)
 %
-% load('NonConvexData/Trad_Methods_fixed_nonconvex.mat');
+%%
+load('MatData/VaryMethods_Trad_Data.mat');
 
-%
+
 %Keep this order for clean code
-colors = {'r','b','k','c'};
-names = {'iLQR', 'E-ModRNEA DDP','Explicit DDP','Tensor DDP'};
-Stuff = {iLQR_store}%,DDP_ExtMod_store};%,DDP_Exp_store,DDP_Tens_store}; 
+colors = {'m','b','r'};
+names = {'iLQR', 'mRNEAc DDP','Tensor DDP'};
+Stuff = {iLQR_store,DDP_ExtMod_store,DDP_Tens_store}; 
 
 % Cost vs Iterations
 figure;hold on; h ={};
@@ -69,7 +63,7 @@ end
 %%
 figure;hold on; h ={};
 for i=1:length(Stuff)
-    a = [Stuff{i}.Vbar{1}];     
+    a = [Stuff{i}.Vbar{5}];     
 %     a = flipud(a);
     h{i}= semilogy(a- a(end),'DisplayName',names{i},'Color',colors{i}); 
 end
@@ -118,6 +112,18 @@ for i=1:length(Stuff)
     fprintf('Iterations of %s',names{i}); 
     CostEnd(i,:)
 end
+fprintf('Time: Tensor vs conventional FO %.2f\n',Time(3)/Time(1))
+fprintf('Time: Tensor vs proposed %.2f\n',Time(3)/Time(2))
+fprintf('Time: proposed vs conventional FO %.2f\n',Time(2)/Time(1))
+
+fprintf('Prcnt Time: Tensor vs iLQR %.2f prcnt\n',100*(Time(3) - Time(1) )/ Time(1))
+fprintf('Prcnt Time: Proposed vs iLQR %.2f prcnt\n',100*(Time(2) - Time(1) )/ Time(1))
+
+bb = yy(:,10)
+fprintf('Time: Tensor vs conventional FO %.2f\n',bb(3)/bb(1))
+fprintf('Time: Tensor vs proposed %.2f\n',bb(3)/bb(2))
+fprintf('Time: proposed vs conventional FO %.2f\n',bb(2)/bb(1))
+
 disp('Time'); 
 Time
 %% Do some simulations and save the gif

@@ -127,7 +127,7 @@ if OtherTests.Run == true
     if OtherTests.varyU 
 %        data= load('crcMatData_New/Trad_Methods_compare_WithReg.mat');
        if OtherTests.BeforeNoise 
-            data = load('MatData/Trad_Methods_5AL_fixed_ReModded.mat');
+            data = load('MatData/VaryMethods_Trad_Data.mat');
             if OtherTests.iLQR
                 xbar = data.iLQR_store.xbar{1}; 
                 ubar = data.iLQR_store.ubar{1}; 
@@ -140,7 +140,7 @@ if OtherTests.Run == true
                 params = data.DDP_ExtMod_store.params;
             end
        else
-            data = load('MatData/diditwork_again.mat');
+            data = load('MatData/FullRuns_All_Methods_NoisedCntrlStates_BeforeNoise.mat');
             xbar = data.ExtMod_Nsd_nowOpt.xbar{1}; 
             ubar = data.ExtMod_Nsd_nowOpt.ubar{1}; 
             robot_params = data.ExtMod_Nsd_nowOpt.rbtparams; 

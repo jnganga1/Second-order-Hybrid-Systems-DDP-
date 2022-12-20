@@ -1,18 +1,10 @@
-
+%assumes right data loaded 
 %%
 set(groot,'defaultLineLineWidth',4)
 set(groot, 'defaultAxesTickLabelInterpreter','latex');
 set(groot, 'defaultLegendInterpreter','latex');
 set(0,'defaultAxesFontSize',22)
 close all; clearvars; clc;
-% load('crcMatData/VaryU_Noise_MultiRuns_Again.mat');
-% load('MatData/VaryU_Noise_ShortRuns_WithReg.mat');
-% % load('MatData/VaryU_Noise_MultiRuns_Again.mat');
-% load('crcMatData_New/VaryU_Noise_ShortRuns_WithReg.mat');
-
-%%
-% load('Data_BoundingNewNew/VaryU_Noise_ShortRuns_Not_Tens_fixed.mat');
-
 %%
 
 colors = {'r','b','k','c'};
@@ -106,7 +98,7 @@ figure; hold on;
     h{1}=plot(iLQR_Box_Vbar,'ro','DisplayName',names{1},'Color',colors{1});
     h{2}=plot(ExtMod_Box_Vbar,'o','DisplayName',names{2},'Color',colors{2});
 %     h{3}=plot(Exp_Box_Vbar,'o','DisplayName',names{3},'Color',colors{3});
-%     h{4}=plot(Tens_Box_Vbar,'o','DisplayName',names{3},'Color',colors{4});
+    h{4}=plot(Tens_Box_Vbar,'o','DisplayName',names{3},'Color',colors{4});
 
 
 % end
@@ -118,10 +110,10 @@ legend
 %%  Boxplot EndCost 
 figure; 
 
-bp_vbar = boxplot([iLQR_Box_Vbar(:) ExtMod_Box_Vbar(:) ...
-   Tens_Box_Vbar(:)],names,'Whisker',50);
+bp_vbar = boxplot([iLQR_Box_Vbar(:) ExtMod_Box_Vbar(:)])% ...
+%    Tens_Box_Vbar(:)],names,'Whisker',50);
 
-% bp_vbar = boxplot([iLQR_Box_Vbar(:) ExtMod_Box_Vbar(:)],names,'Whisker',50);
+% bp_vbar = boxplot([iLQR_Box_Vbar(:) ExtMod_Box_Vbar(:)]',names,'Whisker',50);
 
 ylabel('End Cost, 50 Iterations','Interpreter','latex')
 bb=gca;
@@ -132,7 +124,20 @@ grid on; grid minor;
 figure; 
 divy=1;
 boxplot([iLQR_Box_Time(:) ExtMod_Box_Time(:) ...
-    Exp_Box_Time(:) Tens_Box_Time(:)]./divy,names,'Whisker',1000);
+    Exp_Box_Time(:) Tens_Box_Time(:)]./divy,names,'symbol', '');
+
+
+colored = {'r','m','b'};
+h = findobj(gca,'Tag','Box');
+g = findobj(gca,'Tag','Median');
+for j=1:length(h)
+    patch(get(h(j),'XData'),get(h(j),'YData'),colored{j},'FaceAlpha',1);
+    g(j).Color = 'w';
+    g(j).LineWidth = 1;
+end
+set(gca,'children',flipud(get(gca,'children')))
+lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+
 
 % boxplot([iLQR_Box_Time(:) ExtMod_Box_Time(:)]./divy,names,'Whisker',1000);
 
@@ -145,6 +150,7 @@ end
 
 ylabel('Time (s), 50 Iterations','Interpreter','latex')
 bb=gca;
+bb.YTick = [10^2 10^3];
 bb.YScale ='log';
 bb.XTickLabelRotation = 20; 
 bb.TickLabelInterpreter = 'latex';
@@ -370,10 +376,10 @@ hh{iClr} = plot(D,L*m,colors{iClr},'DisplayName',names{iClr});
 % [L,D]= ksdensity(h(:),'Function','pdf');
 % hh{iClr} = plot(D,L*m,colors{iClr},'DisplayName',names{iClr});  
 
-for i=1:4 
-    hh{i}.LineStyle = '-';
-    hh{i}.LineWidth = 2;
-end
+% for i=1:4 
+%     hh{i}.LineStyle = '-';
+%     hh{i}.LineWidth = 2;
+% end
 
 iLQR_histo.FaceColor = colors{1};
 % Exp_histo.FaceColor = colors{2};

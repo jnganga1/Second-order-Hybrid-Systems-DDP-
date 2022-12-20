@@ -5,15 +5,16 @@ close all; clear; clc;
 Itgr = 1;
 OtherTests.Run = true; 
 OtherTests.randomInit = false;
-OtherTests.maxItr = 100;
+OtherTests.maxItr = 1;
 OtherTests.dt = 1e-3;
+OtherTests.BeforeNoise = false;
 
 OtherTests.varyU  = true; %care about varying u in this round
 
 iLQR_Box = {}; ExtMod_Box ={};
 Exp_Box = {}; Tens_Box= {};
 
-iNumber = 40; 
+iNumber = 1; 
 
 cWork = {};
 
@@ -72,4 +73,4 @@ end
 % plot(Tens_Box{1}.Vbar{:},'DisplayName','Tens');
 % legend
 
-save('MatData/VaryU_Noise_ShortRuns_Tens_fixed_ReModded2.mat');
+save('MatData/VaryU_Noise_ShortRuns_Tens_Data.mat');

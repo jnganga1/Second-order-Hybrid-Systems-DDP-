@@ -2,18 +2,18 @@
 %%
 %% I print to working directory
 %%
-str = 'Reproduced';
-filename = ['ReWorkedFigures/',str];
+str = 'GRFandControlLimit';
+filename = ['figures/',str];
 %
 L = gcf; 
 set(L,'Units','Inches');
 pos = get(L,'Position');
 set(L,'PaperPositionMode','Auto','PaperUnits','Inches','PaperSize',[pos(3), pos(4)])
-print(L,filename,'-dsvg','-r0')
+% print(L,filename,'-dsvg','-r0')
 print(L,filename,'-dpdf','-r0')
 saveas(L,filename,'fig')
 
-filenamePdf = ['pdfcrop ', filename,'.pdf']
+filenamePdf = ['pdfcrop ', filename,'.pdf'];
 system(filenamePdf)
 
 %%
